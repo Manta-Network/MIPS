@@ -1,29 +1,37 @@
-Walllet / Address Management Spec
+Address / Wallet Spec
+======================
+
+## Overview
+
+Manta uses two kind of addresses
+* *public addresses*: substrate standard addresses with Manta's SS58 prefix (Manta's SS58 prefix will not be rolled out in the first stage of the testnet, i.e. testent alpha)
+*TODO: add the specific address types we support here*
+* *shielded addresses*: a one time, private address that uses for privitated coins
 
 
-Mnemonics 
+## Mnemonics 
 
 https://wiki.polkadot.network/docs/en/learn-accounts
 
-Manta applications should support mnemonics from the BIP39 dictionary, and map mnemonics to secrets in the same way as Subkey and Polkadot-JS:
-
-“””
-Subkey and Polkadot-JS based wallets use the BIP39 dictionary for mnemonic generation, but use the entropy byte array to generate the private key, while full BIP39 wallets (like Ledger) use 2048 rounds of PBKDF2 on the mnemonic
-“””
-
-User should never have to save any information besides the mnemonic to access a wallet. 
+Manta wallets should support mnemonics from the BIP39 dictionary, and map mnemonics to secrets in the same way as Subkey and Polkadot-JS:
 
 
-Address Hierarchy
+> Subkey and Polkadot-JS based wallets use the BIP39 dictionary for mnemonic generation, but use the entropy byte array to generate the private key, while full BIP39 wallets (like Ledger) use 2048 rounds of PBKDF2 on the mnemonic
+
+
+The Mnemonics can be used the recover all the public coins and private coins that a user has. User should never have to save any information besides the mnemonic to access a wallet. 
+
+
+## Address Hierarchy
 
 Manta applications should conform to the BIP 44 spec (“Multi-Account Hierarchy for Deterministic Wallets”) https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki
 This is very standard, Polkadot ETH and most other significant coins do so.
 
-Summary: We have some deterministic function CKDpriv((pk, i) → (pk_i) that computes child key #i  from a parent private key (from which we can also derive an address). The master private key is the root node of a tree-shaped wallet. “Derivation paths” represent the path to some leaf (pk) and look like this:
+Summary: We have a deterministic key derivation function `KDFpriv: SK \times N → SK`. For example, `KDFPriv(sk, i) → sk_i` that computes child key #i from a parent secret key (from which we can also derive an address). The master secret key is the root node of a tree-shaped wallet. “Derivation paths” represent the path to some leaf (sk) and look like this:
 m / 44' / 0' / 0' / 0 / 0
 Each part of the path provides some information. The above example indicates “the first non-change address in the primary bitcoin account.” 
 
-Address Hierarchy (Manta token)
+## Address Hierarchy (Manta token)
 
 We will want to register our own coin type. E.g. if our coin type is 615, the key path to a manta wallet will look like.
 
@@ -32,9 +40,7 @@ We will want to register our own coin type. E.g. if our coin type is 615, the ke
 In practice, our applications should only use a few standard paths. 
 
 
-Address Hierarchy (private tokens on manta swap)
-
-
+## Address Hierarchy (private tokens)
 
 Address Derivation
 
