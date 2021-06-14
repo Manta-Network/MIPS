@@ -1,58 +1,56 @@
-Address / Wallet Spec
-======================
+# Address / Wallet Spec
 
 ## Overview
 
 Manta uses two kind of addresses
-* *public addresses*: substrate standard addresses with Manta's SS58 prefix (Manta's SS58 prefix will not be rolled out in the first stage of the testnet, i.e. testent alpha)
-*TODO: add the specific address types we support here*
-* *shielded addresses*: a one time, private address that uses for privitated coins
 
+- _public addresses_: substrate standard addresses with Manta's SS58 prefix (Manta's SS58 prefix will not be rolled out in the first stage of the testnet, i.e. testent alpha)
+  _TODO: add the specific address types we support here_
+- _shielded addresses_: a one time, private address that uses for privitated coins
 
-## Mnemonics 
+Testnet addresses should also have distinct prefixes to prevent confusion between testnet and mainnet addresses.
+
+## Address Hierarchy
+
+Manta wallets should conform to the BIP 44 spec (“Multi-Account Hierarchy for Deterministic Wallets”) https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki
+This is a standard best practice for wallet design across all cryptocurrencies. ETH and DOT for example have registered BIP 44 coin types.
+
+Summary: We have a deterministic key derivation function `KDFpriv: SK \times N → SK`. For example, `KDFPriv(sk, i) → sk_i` that computes child key #i from a parent secret key (from which we can also derive an address). The master secret key is the root node of a tree-shaped wallet. “Derivation paths” represent the path to some leaf (sk) and look like this:
+m / 44' / 0' / 0' / 0 / 0
+Each part of the path provides some information. The above example indicates “the first non-change address in the primary bitcoin account.”
+
+## Address Hierarchy (Manta token)
+
+https://github.com/satoshilabs/slips/blob/master/slip-0044.md
+
+We should register our own coin type. If Manta token's coin type is (for example) 615, the key path to a manta wallet will be:
+
+`m / 44' / 615' / 0'`
+
+Since public Manta tokens are not UTXO-based, it should never be necessary to generate more than one address, or to generate a change address. So (following the above example), our 1 address will have this path:
+
+`m / 44' / 615' / 0' / 0 / 0`
+
+## Address Hierarchy (private tokens)
+
+Private tokens on Manta network should have a single BIP 44 coin ID, different from the Manta token coin ID. Private DOT, private wrapped ETH, and private Manta will all have the same BIP 44 coin ID and the same account path. This is possible and convenient because all private tokens on Manta network have the same cryptographic backend.
+
+Storing all private tokens in the same account provides two advantages. First, it allows us to follow BIP 44 without adding a new coin type for every different private asset on Manta network. Second, it makes recovering wallets from mnemonic is simpler and faster, because wallet software only needs to check one keypath.
+
+## Mnemonics
 
 https://wiki.polkadot.network/docs/en/learn-accounts
 
 Manta wallets should support mnemonics from the BIP39 dictionary, and map mnemonics to secrets in the same way as Subkey and Polkadot-JS:
 
-
 > Subkey and Polkadot-JS based wallets use the BIP39 dictionary for mnemonic generation, but use the entropy byte array to generate the private key, while full BIP39 wallets (like Ledger) use 2048 rounds of PBKDF2 on the mnemonic
 
+## Account Recovery
 
-The Mnemonics can be used the recover all the public coins and private coins that a user has. User should never have to save any information besides the mnemonic to access a wallet. 
+1. A user enters a recovery phrase into a Manta wallet.
+2. The wallet generates a master secret key from the mnemonic.
+3. The wallet derives our Manta token address and simply asks polkadot.js for its balance.
+4. The wallet derives the Manta private token account root key.
+5. The wallet derives private token addresses starting from index 0, and checks if each address has ever received a UTXO. If the wallet sees N\* addresses in a row that have never received a UTXO, it stops checking.
 
-
-## Address Hierarchy
-
-Manta applications should conform to the BIP 44 spec (“Multi-Account Hierarchy for Deterministic Wallets”) https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki
-This is very standard, Polkadot ETH and most other significant coins do so.
-
-Summary: We have a deterministic key derivation function `KDFpriv: SK \times N → SK`. For example, `KDFPriv(sk, i) → sk_i` that computes child key #i from a parent secret key (from which we can also derive an address). The master secret key is the root node of a tree-shaped wallet. “Derivation paths” represent the path to some leaf (sk) and look like this:
-m / 44' / 0' / 0' / 0 / 0
-Each part of the path provides some information. The above example indicates “the first non-change address in the primary bitcoin account.” 
-
-## Address Hierarchy (Manta token)
-
-We will want to register our own coin type. E.g. if our coin type is 615, the key path to a manta wallet will look like.
-
- https://github.com/satoshilabs/slips/blob/master/slip-0044.md
-
-In practice, our applications should only use a few standard paths. 
-
-
-## Address Hierarchy (private tokens)
-
-Address Derivation
-
-[Question: Is one pk good for many addresses?, if so, maybe no need to derive child private keys. But if child key derivation is cheap, we may still want to do so anyway]
-
-[Rephrase: Given a PK and infinite randomness, can we derive infinite shielded addresses?]
-
-It’s not possible for us to do key derivation exactly as described by BIP 32, since it is specific to Bitcoin’s ECDSA crypto. Whatever derivation scheme we use, it should be secure, publicly documented, and deterministic.
-
-
-Version Bytes
-
-https://wiki.trezor.io/Version_bytes
-
-Manta token addresses and private tokens on manta swap should register their own distinct version bytes.
+\*"N" is commonly reffered to as the "gap limit," with 20 as a standard value
