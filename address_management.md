@@ -8,7 +8,7 @@ Manta uses two kind of addresses
 
 - _public addresses_: Substrate standard addresses with Manta's SS58 prefix (Manta's SS58 prefix will not be rolled out in the first stage of the testnet, i.e. testent alpha)
   _TODO: add the specific address types we support here_
-- _shielded addresses_: Addresses that may receive private coins on Manta network, e.g. private DOT. Addresses are specific to coin type e.g. it is not possible to send private DOT to a private WETH address. Address re-use is a privacy leak.
+- _shielded addresses_: Addresses that may receive private coins on Manta network, e.g. private DOT. Addresses are specific to coin type e.g. it is not possible to send private DOT to a private WETH address. Address re-use is a privacy leak (Please refer to MIP-0002 for the details of shielded addresses).
 
 Testnet addresses should also have distinct prefixes to prevent confusion between testnet and mainnet addresses.
 
@@ -33,12 +33,22 @@ To avoid confusion between public coins and their private equivalents on Manta n
 
 The purpose ID corresponding to MIP1 is 3681947.
 
-In all other respects, Manta's wallet protocol will be identical to BIP44
+In all other respects, Manta's wallet protocol will be identical to BIP44. An example Manta key derivation path:
 
+`m/3681947/0/5/1/25`
+
+where:
+- `m` is the master secret of this manta wallet, this is a derived secret from the secret key of user's substrate account (the algorithm used to derive `m` will be specified later)
+- `3681047` is Manta's WALLET_PROTOCOL_ID
+- `0` means the first account under this wallet. A single acccount wallet uses `0` by default.
+- `5` is the COIN_TYPE_ID, this is corresponding to the `asset_id` in `MantaAsset`. The definition of COIN_TYPE_ID will be maintained in a subsequent MIP.
+- `1` means this is a change coin, either obtained through mint or through change sent to the wallet itself. 
+- `25` is means this is the 26th coin in this `m/3681947/0/5/1/` path (0 indexed).
 
 ### Child Key Derivation
 
-The nth hardened child of secret key s shall be **Blake2s(s || n)** where n is an unsigned 32 bit integer.
+Let `s` be the secret key corresponds to path `p`, then the secret key corresponds to path `p/n` is **Blake2s(s || n)**, where `n` is a 
+little endian 32 bit unsigned integer.
 
 Note that this derivation algorithm differs both from BIP32 algorithm and the Substrate standard algorithm.
 
